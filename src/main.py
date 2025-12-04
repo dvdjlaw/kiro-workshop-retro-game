@@ -15,6 +15,7 @@ BLACK_900 = (13, 13, 13)
 PURPLE_500 = (121, 14, 203)
 WHITE = (255, 255, 255)
 PREY_300 = (156, 163, 175)
+SPOOKY_GREEN = (50, 205, 50)  # Lime green for spooky enemies
 
 # Physics
 GRAVITY = 0.3
@@ -77,7 +78,15 @@ class Player:
 
 class Enemy:
     def __init__(self, x, y, image):
-        self.original_image = pygame.transform.scale(image, (50, 50))
+        # Scale and apply spooky green tint to the image
+        scaled_image = pygame.transform.scale(image, (50, 50))
+        self.original_image = scaled_image.copy()
+        
+        # Apply green color overlay
+        green_overlay = pygame.Surface((50, 50))
+        green_overlay.fill(SPOOKY_GREEN)
+        self.original_image.blit(green_overlay, (0, 0), special_flags=pygame.BLEND_MULT)
+        
         self.image = self.original_image
         self.facing_right = True
         self.rect = self.image.get_rect()

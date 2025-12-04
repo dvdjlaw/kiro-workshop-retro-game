@@ -7,7 +7,7 @@ from unittest.mock import Mock, patch
 # Add src directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from main import Player, Enemy, Game, SCREEN_WIDTH, SCREEN_HEIGHT, GRAVITY, JUMP_POWER, MOVE_SPEED
+from main import Player, Enemy, Game, SCREEN_WIDTH, SCREEN_HEIGHT, GRAVITY, JUMP_POWER, MOVE_SPEED, SPOOKY_GREEN
 
 
 @pytest.fixture
@@ -232,6 +232,57 @@ class TestEnemy:
         enemy.update(500)
         
         assert enemy.direction_timer == 0
+    
+    def test_enemy_sprite_has_green_tint(self, pygame_init):
+        """Test that enemy sprite has green color components after initialization"""
+        # Create a white test image so green tint will be visible
+        test_image = pygame.Surface((50, 50))
+        test_image.fill((255, 255, 255))
+        
+        enemy = Enemy(300, 400, test_image)
+        
+        # Sample pixels from the sprite to check for green tint
+        # Get the color at the center of the sprite
+        center_x = enemy.original_image.get_width() // 2
+        center_y = enemy.original_image.get_height() // 2
+        pixel_color = enemy.original_image.get_at((center_x, center_y))
+        
+        # After BLEND_MULT with SPOOKY_GREEN (50, 205, 50), the sprite should have green tinting
+        # The green component should be significantly higher than red and blue
+        assert pixel_color[1] > pixel_color[0], "Green component should be dominant after tinting"
+        assert pixel_color[1] > pixel_color[2], "Green component should be dominant after tinting"
+    
+    def test_enemy_sprite_dimensions_preserved(self, pygame_init, mock_image):
+        """Test that sprite dimensions remain 50x50 after tinting"""
+        enemy = Enemy(300, 400, mock_image)
+        
+        assert enemy.original_image.get_width() == 50
+        assert enemy.original_image.get_height() == 50
+        assert enemy.rect.width == 50
+        assert enemy.rect.height == 50
+    
+    def test_flipped_enemy_maintains_green_tint(self, pygame_init):
+        """Test that flipped enemy sprites maintain green tint"""
+        # Create a white test image so green tint will be visible
+        test_image = pygame.Surface((50, 50))
+        test_image.fill((255, 255, 255))
+        
+        enemy = Enemy(300, 400, test_image)
+        
+        # Store original image color sample
+        center_x = enemy.original_image.get_width() // 2
+        center_y = enemy.original_image.get_height() // 2
+        original_color = enemy.original_image.get_at((center_x, center_y))
+        
+        # Flip the enemy by changing direction
+        enemy.move_direction = -1
+        enemy.facing_right = True  # Set to True so update will flip it
+        enemy.update(500)
+        
+        # Check that the flipped image still has green tint
+        flipped_color = enemy.image.get_at((center_x, center_y))
+        assert flipped_color[1] > flipped_color[0], "Green component should be dominant after flipping"
+        assert flipped_color[1] > flipped_color[2], "Green component should be dominant after flipping"
 
 
 class TestGame:
