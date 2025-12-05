@@ -1,11 +1,6 @@
 import pytest
 import pygame
-import sys
-from pathlib import Path
 from unittest.mock import Mock, patch
-
-# Add src directory to path
-sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from main import Player, Enemy, Game, SCREEN_WIDTH, SCREEN_HEIGHT, GRAVITY, JUMP_POWER, MOVE_SPEED, SPOOKY_GREEN
 
