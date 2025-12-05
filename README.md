@@ -6,6 +6,8 @@ An arcade-style side-scrolling game built with Python and Pygame as part of the 
 
 Kiro Shmup is a simple platformer/shmup hybrid featuring the Kiro logo as the player character. Players navigate a 2D environment, avoiding enemies while demonstrating basic game mechanics like movement, jumping, and collision detection.
 
+![Gameplay Screenshot](docs/screenshot.png)
+
 ## Features
 
 - Player movement and jumping mechanics
