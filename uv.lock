@@ -40,17 +40,16 @@ dependencies = [
     { name = "pygame" },
 ]
 
-[package.optional-dependencies]
+[package.dev-dependencies]
 dev = [
     { name = "pytest" },
 ]
 
 [package.metadata]
-requires-dist = [
-    { name = "pygame", specifier = ">=2.5.0" },
-    { name = "pytest", marker = "extra == 'dev'", specifier = ">=7.4.0" },
-]
-provides-extras = ["dev"]
+requires-dist = [{ name = "pygame", specifier = ">=2.5.0" }]
+
+[package.metadata.requires-dev]
+dev = [{ name = "pytest", specifier = ">=7.4.0" }]
 
 [[package]]
 name = "packaging"

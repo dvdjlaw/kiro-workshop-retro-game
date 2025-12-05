@@ -27,16 +27,10 @@ Kiro Shmup is a simple platformer/shmup hybrid featuring the Kiro logo as the pl
 
 ### Installation
 
-Install dependencies:
+Install dependencies (includes dev tools by default):
 
 ```bash
 uv sync
-```
-
-For development (includes testing tools):
-
-```bash
-uv sync --extra dev
 ```
 
 ## Running the Game
