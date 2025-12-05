@@ -9,6 +9,8 @@ Kiro Shmup is a simple platformer/shmup hybrid featuring the Kiro logo as the pl
 ## Features
 
 - Player movement and jumping mechanics
+- Sonic wave shooting mechanic with rapid-fire capability
+- Dynamic enemy spawning system with fast respawn
 - Random enemy AI with physics-based movement
 - Health system with visual heart display
 - Invulnerability frames after taking damage
@@ -54,6 +56,7 @@ python src/main.py
 
 - **Arrow Keys** or **WASD**: Move left/right
 - **Space** or **Up Arrow** or **W**: Jump
+- **X** or **Z**: Shoot sonic waves
 - **Space** or **Click**: Start game / Restart after game over
 
 ## Testing

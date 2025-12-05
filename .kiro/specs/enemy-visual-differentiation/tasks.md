@@ -26,3 +26,24 @@
 - [ ]* 5. Write property test for sprite dimension preservation
   - **Property 2: Sprite dimensions preserved after tinting**
   - **Validates: Requirements 1.5**
+
+- [x] 6. Generate new enemy sprite using MCP server
+  - Use an MCP image generation server to create a new enemy sprite
+  - Specify that the sprite should match the graphical style of the Kiro logo (pixel art/retro style)
+  - Request a pumpkin character design that contrasts with the player character
+  - Save the generated image to `assets/enemy.png`
+  - Ensure the image is suitable for game use (transparent background, appropriate size)
+  - _Requirements: 1.1, 1.2, 1.4_
+
+- [x] 7. Update Enemy class to use new sprite asset
+  - Modify the Enemy class initialization to load `assets/enemy.png` instead of reusing the Kiro logo
+  - Update the image loading in the Game class to pass the enemy sprite to Enemy instances
+  - Remove or comment out the green tint code since the new sprite will have its own distinct appearance
+  - Test that the new enemy sprite displays correctly in-game
+  - _Requirements: 1.1, 1.2, 1.4_
+
+- [ ]* 8. Write unit tests for new enemy sprite loading
+  - Test that Enemy class successfully loads enemy.png when it exists
+  - Test that Enemy class falls back to Kiro logo when enemy.png doesn't exist
+  - Test that sprite dimensions are correct after loading
+  - _Requirements: 1.1, 1.5_

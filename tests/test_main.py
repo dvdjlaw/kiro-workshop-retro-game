@@ -177,13 +177,16 @@ class TestEnemy:
         assert 30 <= enemy.direction_change_interval <= 90
     
     def test_enemy_stays_in_bounds_left(self, pygame_init, mock_image):
-        """Test enemy cannot move past left screen boundary"""
+        """Test enemy cannot move past left screen boundary and moves away from it"""
         enemy = Enemy(0, 200, mock_image)
         enemy.move_direction = -1
         
         enemy.update(500)
         
-        assert enemy.rect.x == 0
+        # Enemy should trigger boundary behavior and move right (away from left boundary)
+        assert enemy.rect.x >= 0
+        assert enemy.boundary_timer == 59  # Timer should be set to 60 and decremented once
+        assert enemy.boundary_direction == 1  # Should move right
     
     def test_enemy_stays_in_bounds_right(self, pygame_init, mock_image):
         """Test enemy cannot move past right screen boundary"""
@@ -233,24 +236,27 @@ class TestEnemy:
         
         assert enemy.direction_timer == 0
     
-    def test_enemy_sprite_has_green_tint(self, pygame_init):
-        """Test that enemy sprite has green color components after initialization"""
-        # Create a white test image so green tint will be visible
-        test_image = pygame.Surface((50, 50))
-        test_image.fill((255, 255, 255))
+    def test_enemy_sprite_loads_correctly(self, pygame_init):
+        """Test that enemy sprite loads and scales correctly without tinting"""
+        # Create a test image with a specific color
+        test_image = pygame.Surface((100, 100))
+        test_image.fill((255, 128, 64))  # Orange color
         
         enemy = Enemy(300, 400, test_image)
         
-        # Sample pixels from the sprite to check for green tint
-        # Get the color at the center of the sprite
+        # Check that the sprite is scaled to 50x50
+        assert enemy.original_image.get_width() == 50
+        assert enemy.original_image.get_height() == 50
+        
+        # Sample pixels from the sprite to verify it maintains original color (no tint)
         center_x = enemy.original_image.get_width() // 2
         center_y = enemy.original_image.get_height() // 2
         pixel_color = enemy.original_image.get_at((center_x, center_y))
         
-        # After BLEND_MULT with SPOOKY_GREEN (50, 205, 50), the sprite should have green tinting
-        # The green component should be significantly higher than red and blue
-        assert pixel_color[1] > pixel_color[0], "Green component should be dominant after tinting"
-        assert pixel_color[1] > pixel_color[2], "Green component should be dominant after tinting"
+        # The sprite should maintain its original color without green tinting
+        assert pixel_color[0] == 255, "Red component should be preserved"
+        assert pixel_color[1] == 128, "Green component should be preserved"
+        assert pixel_color[2] == 64, "Blue component should be preserved"
     
     def test_enemy_sprite_dimensions_preserved(self, pygame_init, mock_image):
         """Test that sprite dimensions remain 50x50 after tinting"""
@@ -261,11 +267,11 @@ class TestEnemy:
         assert enemy.rect.width == 50
         assert enemy.rect.height == 50
     
-    def test_flipped_enemy_maintains_green_tint(self, pygame_init):
-        """Test that flipped enemy sprites maintain green tint"""
-        # Create a white test image so green tint will be visible
+    def test_flipped_enemy_maintains_original_appearance(self, pygame_init):
+        """Test that flipped enemy sprites maintain their original appearance"""
+        # Create a test image with a specific color
         test_image = pygame.Surface((50, 50))
-        test_image.fill((255, 255, 255))
+        test_image.fill((200, 100, 50))  # Specific color to verify
         
         enemy = Enemy(300, 400, test_image)
         
@@ -279,10 +285,94 @@ class TestEnemy:
         enemy.facing_right = True  # Set to True so update will flip it
         enemy.update(500)
         
-        # Check that the flipped image still has green tint
+        # Check that the flipped image maintains the same color
         flipped_color = enemy.image.get_at((center_x, center_y))
-        assert flipped_color[1] > flipped_color[0], "Green component should be dominant after flipping"
-        assert flipped_color[1] > flipped_color[2], "Green component should be dominant after flipping"
+        assert flipped_color[0] == original_color[0], "Red component should be preserved after flipping"
+        assert flipped_color[1] == original_color[1], "Green component should be preserved after flipping"
+        assert flipped_color[2] == original_color[2], "Blue component should be preserved after flipping"
+    
+    def test_hitting_left_boundary_sets_timer_and_direction(self, pygame_init, mock_image):
+        """Test that hitting left boundary sets timer to 60 and direction to 1"""
+        enemy = Enemy(0, 200, mock_image)
+        enemy.boundary_timer = 0
+        
+        enemy.update(500)
+        
+        assert enemy.boundary_timer == 59  # Set to 60, then decremented once
+        assert enemy.boundary_direction == 1  # Should move right
+    
+    def test_hitting_right_boundary_sets_timer_and_direction(self, pygame_init, mock_image):
+        """Test that hitting right boundary sets timer to 60 and direction to -1"""
+        enemy = Enemy(SCREEN_WIDTH - 50, 200, mock_image)
+        enemy.boundary_timer = 0
+        
+        enemy.update(500)
+        
+        assert enemy.boundary_timer == 59  # Set to 60, then decremented once
+        assert enemy.boundary_direction == -1  # Should move left
+    
+    def test_boundary_timer_decrements_each_frame(self, pygame_init, mock_image):
+        """Test that boundary_timer decrements each frame"""
+        enemy = Enemy(300, 200, mock_image)
+        enemy.boundary_timer = 30
+        enemy.boundary_direction = 1
+        
+        enemy.update(500)
+        
+        assert enemy.boundary_timer == 29
+    
+    def test_enemy_moves_in_boundary_direction_while_timer_active(self, pygame_init, mock_image):
+        """Test that enemy moves in boundary_direction while timer is active"""
+        enemy = Enemy(300, 200, mock_image)
+        enemy.boundary_timer = 30
+        enemy.boundary_direction = 1
+        initial_x = enemy.rect.x
+        
+        enemy.update(500)
+        
+        assert enemy.move_direction == 1
+        assert enemy.rect.x == initial_x + MOVE_SPEED
+    
+    def test_timer_expiration_restores_normal_random_movement(self, pygame_init, mock_image):
+        """Test that timer expiration restores normal random movement"""
+        enemy = Enemy(300, 200, mock_image)
+        enemy.boundary_timer = 1
+        enemy.boundary_direction = 1
+        enemy.direction_timer = 0
+        enemy.direction_change_interval = 100  # Set high to prevent direction change
+        
+        # Update once to expire the timer (timer goes from 1 to 0)
+        enemy.update(500)
+        
+        assert enemy.boundary_timer == 0
+        # On the frame where timer expires, direction_timer doesn't increment yet
+        # because the boundary timer logic still executes (timer was > 0 at start)
+        assert enemy.direction_timer == 0
+        
+        # Update again - now normal behavior should resume
+        enemy.update(500)
+        assert enemy.direction_timer == 1  # Normal behavior: timer increments
+    
+    def test_movement_speed_consistent_during_boundary_movement(self, pygame_init, mock_image):
+        """Test that movement speed remains consistent during boundary movement"""
+        enemy = Enemy(300, 200, mock_image)
+        
+        # Test normal movement speed
+        enemy.move_direction = 1
+        enemy.boundary_timer = 0
+        initial_x = enemy.rect.x
+        enemy.update(500)
+        normal_distance = enemy.rect.x - initial_x
+        
+        # Reset position and test boundary movement speed
+        enemy.rect.x = 300
+        enemy.boundary_timer = 30
+        enemy.boundary_direction = 1
+        initial_x = enemy.rect.x
+        enemy.update(500)
+        boundary_distance = enemy.rect.x - initial_x
+        
+        assert normal_distance == boundary_distance == MOVE_SPEED
 
 
 class TestGame:
@@ -316,11 +406,13 @@ class TestGame:
         game.state = 'playing'
         initial_health = game.player_health
         
-        # Position player and enemy to collide
+        # Create enemy and add to pool
+        enemy = Enemy(100, 100, mock_surface)
+        game.enemies.append(enemy)
+        
+        # Position player to collide with enemy
         game.player.rect.x = 100
         game.player.rect.y = 100
-        game.enemy.rect.x = 100
-        game.enemy.rect.y = 100
         
         game.update()
         
@@ -338,11 +430,13 @@ class TestGame:
         game.state = 'playing'
         game.player_health = 1
         
-        # Position player and enemy to collide
+        # Create enemy and add to pool
+        enemy = Enemy(100, 100, mock_surface)
+        game.enemies.append(enemy)
+        
+        # Position player to collide with enemy
         game.player.rect.x = 100
         game.player.rect.y = 100
-        game.enemy.rect.x = 100
-        game.enemy.rect.y = 100
         
         game.update()
         
@@ -363,11 +457,13 @@ class TestGame:
         game.invulnerable_timer = 30  # Set timer to keep invulnerability active
         initial_health = game.player_health
         
-        # Position player and enemy to collide
+        # Create enemy and add to pool
+        enemy = Enemy(100, 100, mock_surface)
+        game.enemies.append(enemy)
+        
+        # Position player to collide with enemy
         game.player.rect.x = 100
         game.player.rect.y = 100
-        game.enemy.rect.x = 100
-        game.enemy.rect.y = 100
         
         game.update()
         
@@ -420,11 +516,13 @@ class TestGame:
         game.state = 'playing'
         game.player_health = 3
         
-        # Position player and enemy to collide
+        # Create enemy and add to pool
+        enemy = Enemy(100, 100, mock_surface)
+        game.enemies.append(enemy)
+        
+        # Position player to collide with enemy
         game.player.rect.x = 100
         game.player.rect.y = 100
-        game.enemy.rect.x = 100
-        game.enemy.rect.y = 100
         
         game.update()
         
@@ -443,11 +541,13 @@ class TestGame:
         game.state = 'playing'
         game.player_health = 2
         
-        # Position player and enemy to collide
+        # Create enemy and add to pool
+        enemy = Enemy(100, 100, mock_surface)
+        game.enemies.append(enemy)
+        
+        # Position player to collide with enemy
         game.player.rect.x = 100
         game.player.rect.y = 100
-        game.enemy.rect.x = 100
-        game.enemy.rect.y = 100
         
         game.update()
         
